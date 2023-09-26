@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
+    <script
+      src="https://kit.fontawesome.com/c357198ce2.js"
+      crossorigin="anonymous"
+    ></script>
     <title>ImgDis</title>
   </head>
   <body>
@@ -14,11 +18,17 @@
       <button type="submit">Search</button>
     </form>
 
-    <div id="imageGallery" class="card-container"></div>
+    <div id="imageGallery" class="card-container">
+      <div class="card" style="display: none">
+        <i class="fa-regular fa-heart"></i>
+      </div>
+    </div>
 
     <button id="loadMoreBtn" onclick="loadMoreImages()" hidden>
       More Images
     </button>
+
+    <button id="toggleViewBtn" onclick="toggleView()">View Favorites</button>
 
     <div id="modal" class="modal">
       <div class="modal-content" id="modal-content">

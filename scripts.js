@@ -9,52 +9,92 @@ function handleFormSubmit(event) {
   callApi(searchQuery, 1);
 }
 
-function callApi(searchQuery) {
-  fetch(`${URL}&q=${encodeURIComponent(searchQuery)}&page=${page}`)
-    .then((response) => response.json())
-    .then((data) => displayResults(data))
-    .catch((error) => console.error("Error fetching data:", error));
+function callApi(searchQuery, page) {
+  if (!displayFavorites) {
+    fetch(`${URL}&q=${encodeURIComponent(searchQuery)}&page=${page}`)
+      .then((response) => response.json())
+      .then((data) => displayResults(data, page))
+      .catch((error) => console.error("Error fetching data:", error));
+  } else {
+    displayFavoriteImages();
+  }
 }
 
-function displayResults(data) {
-  const imageGallery = document.getElementById("imageGallery");
-  imageGallery.innerHTML = "";
+function displayResults(data, page) {
+  if (!displayFavorites) {
+    const imageGallery = document.getElementById("imageGallery");
 
-  data.hits.forEach((hit, index) => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `<img src="${hit.webformatURL}" alt="Image" id="img-${index}" />`;
-    imageGallery.appendChild(card);
-
-    const imgElement = document.getElementById(`img-${index}`);
-    imgElement.addEventListener("click", () => openModal(hit));
-  });
-}
-
-function openModal(hit) {
-  const modal = document.getElementById("modal");
-  const modalContent = document.getElementById("modal-item-details");
-  modalContent.innerHTML = `<p>Image Url: ${hit.pageURL}</p>
-                            <p>Image tags: ${hit.tags}</p>
-                            <p>Views: ${hit.views}</p>
-                            <p>Comments: ${hit.comments}</p>
-                            <p>Likes: ${hit.likes}</p>
-                            <p>User: ${hit.user}</p>`;
-
-  modal.style.display = "block";
-
-  window.addEventListener("click", (event) => {
-    if (event.target == modal) {
-      closeModalFunc(modal);
+    if (page === 1) {
+      imageGallery.innerHTML = "";
     }
-  });
 
-  const closeModal = document.getElementById("close-modal");
-  closeModal.addEventListener("click", () => closeModalFunc(modal));
+    const favorites = getFavoritesFromLocalStorage();
+
+    data.hits.forEach((hit, index) => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const img = document.createElement("img");
+      img.src = hit.webformatURL;
+      img.alt = "Image";
+      img.id = `img-${index}`;
+
+      const favoriteIcon = document.createElement("div");
+      favoriteIcon.className = "favorite-icon";
+      favoriteIcon.innerHTML = "<i class='far fa-heart'></i>";
+
+      card.appendChild(img);
+      card.appendChild(favoriteIcon);
+      imageGallery.appendChild(card);
+
+      const imgElement = document.getElementById(`img-${index}`);
+      const iconElement = favoriteIcon.querySelector("i");
+
+      if (favorites.includes(hit.webformatURL)) {
+        iconElement.classList.remove("far");
+        iconElement.classList.add("fas");
+      }
+
+      favoriteIcon.addEventListener("click", () =>
+        toggleFavorite(hit, iconElement)
+      );
+      imgElement.addEventListener("click", () => openModal(hit));
+    });
+
+    if (data.totalHits > page * 20) {
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+      loadMoreBtn.hidden = false;
+    } else {
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+      loadMoreBtn.hidden = true;
+    }
+  }
 }
 
-function closeModalFunc(modal) {
-  modal.style.display = "none";
+function toggleFavorite(hit, iconElement) {
+  const favorites = getFavoritesFromLocalStorage();
+  const imageUrl = hit.webformatURL;
+
+  if (favorites.includes(imageUrl)) {
+    const updatedFavorites = favorites.filter((fav) => fav !== imageUrl);
+    iconElement.classList.remove("fas");
+    iconElement.classList.add("far");
+    saveFavoritesToLocalStorage(updatedFavorites);
+  } else {
+    favorites.push(imageUrl);
+    iconElement.classList.remove("far");
+    iconElement.classList.add("fas");
+    saveFavoritesToLocalStorage(favorites);
+  }
+}
+
+function saveFavoritesToLocalStorage(favorites) {
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+}
+
+function getFavoritesFromLocalStorage() {
+  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+  return favorites;
 }
 
 const searchForm = document.getElementById("searchForm");
@@ -68,28 +108,43 @@ function loadMoreImages() {
   callApi(searchQuery, page);
 }
 
-function displayResults(data) {
-  const imageGallery = document.getElementById("imageGallery");
+let displayFavorites = false;
 
-  if (page === 1) {
-    imageGallery.innerHTML = "";
+function toggleView() {
+  displayFavorites = !displayFavorites;
+  const toggleBtn = document.getElementById("toggleViewBtn");
+
+  if (displayFavorites) {
+    toggleBtn.innerText = "View Search Results";
+    displayFavoriteImages();
+  } else {
+    toggleBtn.innerText = "View Favorites";
+    const searchQuery = document.getElementById("searchInput").value;
+    callApi(searchQuery, 1);
+  }
+}
+
+function displayFavoriteImages() {
+  const imageGallery = document.getElementById("imageGallery");
+  imageGallery.innerHTML = "";
+
+  const favorites = getFavoritesFromLocalStorage();
+
+  if (favorites.length === 0) {
+    imageGallery.innerHTML = "<p>No favorites yet.</p>";
+    return;
   }
 
-  data.hits.forEach((hit, index) => {
+  favorites.forEach((favorite, index) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `<img src="${hit.webformatURL}" alt="Image" id="img-${index}" />`;
+
+    const img = document.createElement("img");
+    img.src = favorite;
+    img.alt = "Favorite Image";
+    img.id = `fav-img-${index}`;
+
+    card.appendChild(img);
     imageGallery.appendChild(card);
-
-    const imgElement = document.getElementById(`img-${index}`);
-    imgElement.addEventListener("click", () => openModal(hit));
   });
-
-  if (data.totalHits > page * 20) {
-    const loadMoreBtn = document.getElementById("loadMoreBtn");
-    loadMoreBtn.hidden = false;
-  } else {
-    const loadMoreBtn = document.getElementById("loadMoreBtn");
-    loadMoreBtn.hidden = true;
-  }
 }
