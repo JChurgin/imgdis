@@ -71,3 +71,19 @@ body {
   text-decoration: none;
   cursor: pointer;
 }
+
+#loadMoreBtn {
+  display: hidden;
+  margin: 20px auto;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#loadMoreBtn:hover {
+  background-color: #2980b9;
+}

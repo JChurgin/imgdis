@@ -6,11 +6,11 @@ function handleFormSubmit(event) {
 
   const searchQuery = document.getElementById("searchInput").value;
 
-  callApi(searchQuery);
+  callApi(searchQuery, 1);
 }
 
 function callApi(searchQuery) {
-  fetch(`${URL}&q=${encodeURIComponent(searchQuery)}`)
+  fetch(`${URL}&q=${encodeURIComponent(searchQuery)}&page=${page}`)
     .then((response) => response.json())
     .then((data) => displayResults(data))
     .catch((error) => console.error("Error fetching data:", error));
@@ -59,3 +59,37 @@ function closeModalFunc(modal) {
 
 const searchForm = document.getElementById("searchForm");
 searchForm.addEventListener("submit", handleFormSubmit);
+
+let page = 1;
+
+function loadMoreImages() {
+  const searchQuery = document.getElementById("searchInput").value;
+  page++;
+  callApi(searchQuery, page);
+}
+
+function displayResults(data) {
+  const imageGallery = document.getElementById("imageGallery");
+
+  if (page === 1) {
+    imageGallery.innerHTML = "";
+  }
+
+  data.hits.forEach((hit, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<img src="${hit.webformatURL}" alt="Image" id="img-${index}" />`;
+    imageGallery.appendChild(card);
+
+    const imgElement = document.getElementById(`img-${index}`);
+    imgElement.addEventListener("click", () => openModal(hit));
+  });
+
+  if (data.totalHits > page * 20) {
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    loadMoreBtn.hidden = false;
+  } else {
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    loadMoreBtn.hidden = true;
+  }
+}
