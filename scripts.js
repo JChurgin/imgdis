@@ -1,88 +1,61 @@
 const API_KEY = "38037221-2273b01c62481dfc7f61a369c";
-const API_URL = "https://pixabay.com/api/?key=" + API_KEY;
-let currentPage = 1;
+const URL = `https://pixabay.com/api/?key=${API_KEY}&image_type=photo`;
 
-document
-  .getElementById("searchForm")
-  .addEventListener("submit", function (event) {
-    event.preventDefault();
-    currentPage = 1;
+function handleFormSubmit(event) {
+  event.preventDefault();
 
-    const userSearch = document.getElementById("searchInput").value;
+  const searchQuery = document.getElementById("searchInput").value;
 
-    const searchUrl = API_URL + "&q=" + encodeURIComponent(userSearch) + "&page=" + currentPage;
-
-    if (!userSearch) {
-      const emptyInput = document.createElement("div");
-      emptyInput.textContent = "Empty search box.";
-      imageGallery.appendChild(emptyInput);
-      return;
-    }
-
-    fetch(searchUrl)
-      .then((response) => response.json())
-      .then((data) => {
-        const imageGallery = document.getElementById("imageGallery");
-        imageGallery.innerHTML = "";
-
-        if (parseInt(data.totalHits) > 0) {
-          data.hits.forEach((hit) => {
-            const card = document.createElement("div");
-            card.classList.add("card");
-
-            const img = document.createElement("img");
-            img.src = hit.previewURL;
-            img.setAttribute("data-details", `Tags: ${hit.tags}, Views: ${hit.views}`);
-
-            card.appendChild(img);
-
-            imageGallery.appendChild(card);
-          });
-        } else {
-          const noHitsMessage = document.createElement("div");
-          noHitsMessage.textContent = "No images found.";
-          imageGallery.appendChild(noHitsMessage);
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  });
-
-function displayImageInformation(imageDetails) {
-  const modalDetails = document.getElementById("modalDetails");
-  modalDetails.innerHTML = `<p>${imageDetails}</p>`;
+  callApi(searchQuery);
 }
 
-document
-  .getElementById("imageGallery")
-  .addEventListener("click", function (event) {
-    const target = event.target;
-    if (target.tagName === "IMG") {
-      const imageDetails = target.getAttribute("data-details");
-      displayImageInformation(imageDetails);
+function callApi(searchQuery) {
+  fetch(`${URL}&q=${encodeURIComponent(searchQuery)}`)
+    .then((response) => response.json())
+    .then((data) => displayResults(data))
+    .catch((error) => console.error("Error fetching data:", error));
+}
 
-      const modal = document.getElementById("modal");
-      modal.style.display = "block";
+function displayResults(data) {
+  const imageGallery = document.getElementById("imageGallery");
+  imageGallery.innerHTML = "";
+
+  data.hits.forEach((hit, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<img src="${hit.webformatURL}" alt="Image" id="img-${index}" />`;
+    imageGallery.appendChild(card);
+
+    const imgElement = document.getElementById(`img-${index}`);
+    imgElement.addEventListener("click", () => openModal(hit));
+  });
+}
+
+function openModal(hit) {
+  const modal = document.getElementById("modal");
+  const modalContent = document.getElementById("modal-item-details");
+  modalContent.innerHTML = `<p>Image Url: ${hit.pageURL}</p>
+                            <p>Image tags: ${hit.tags}</p>
+                            <p>Views: ${hit.views}</p>
+                            <p>Comments: ${hit.comments}</p>
+                            <p>Likes: ${hit.likes}</p>
+                            <p>User: ${hit.user}</p>`;
+
+  modal.style.display = "block";
+
+  window.addEventListener("click", (event) => {
+    if (event.target == modal) {
+      closeModalFunc(modal);
     }
   });
 
-const closeModalButton = document.querySelector(".close");
-closeModalButton.addEventListener("click", function () {
-  const modal = document.getElementById("modal");
-  modal.style.display = "none";
+  const closeModal = document.getElementById("close-modal");
+  closeModal.addEventListener("click", () => closeModalFunc(modal));
+}
 
-  const modalDetails = document.getElementById("modalDetails");
-  modalDetails.innerHTML = "";
-});
-
-function closeModal() {
-  const modal = document.getElementById("modal");
+function closeModalFunc(modal) {
   modal.style.display = "none";
 }
-window.addEventListener("click", function (event) {
-  const modal = document.getElementById("modal");
-  if (event.target === modal) {
-    closeModal();
-  }
-});
+
+const searchForm = document.getElementById("searchForm");
+searchForm.addEventListener("submit", handleFormSubmit);

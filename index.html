@@ -2,7 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
     <title>ImgDis</title>
@@ -11,23 +10,18 @@
     <h1>Image Displayer</h1>
 
     <form id="searchForm">
-      <input type="text" id="searchInput" placeholder="Search..." />
+      <input type="text" id="searchInput" placeholder="Search Image" />
       <button type="submit">Search</button>
     </form>
 
     <div id="imageGallery" class="card-container"></div>
 
     <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="modalDetails">
-                <img id="modalImage" src="" alt="Modal Image">
-                <p id="imageDetails"></p>
-            </div>
-        </div>
+      <div class="modal-content" id="modal-content">
+        <span class="close" id="close-modal">&times;</span>
+        <div id="modal-item-details"></div>
+      </div>
     </div>
-
-    <button id="moreImagesBtn">More Images</button>
 
     <script src="scripts.js"></script>
   </body>
