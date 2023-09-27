@@ -9,15 +9,26 @@ function handleFormSubmit(event) {
   callApi(searchQuery, 1);
 }
 
-function callApi(searchQuery, page) {
-  if (!displayFavorites) {
-    fetch(`${URL}&q=${encodeURIComponent(searchQuery)}&page=${page}`)
-      .then((response) => response.json())
-      .then((data) => displayResults(data, page))
-      .catch((error) => console.error("Error fetching data:", error));
-  } else {
+function callApi(queryOrTag, page) {
+  const encodedQueryOrTag = encodeURIComponent(queryOrTag);
+
+  let apiUrl;
+
+  if (displayFavorites) {
     displayFavoriteImages();
+    return;
   }
+
+  if (queryOrTag) {
+    apiUrl = `${URL}&q=${encodedQueryOrTag}&page=${page}`;
+  } else {
+    apiUrl = `${URL}&page=${page}`;
+  }
+
+  fetch(apiUrl)
+    .then((response) => response.json())
+    .then((data) => displayResults(data, page))
+    .catch((error) => console.error('Error fetching data:', error));
 }
 
 function displayResults(data, page) {
@@ -147,7 +158,9 @@ function displayFavoriteImages() {
     const favoriteIcon = document.createElement("div");
     favoriteIcon.className = "favorite-icon";
     favoriteIcon.innerHTML = "<i class='fas fa-heart'></i>";
-    favoriteIcon.addEventListener("click", () => removeFavorite(favorite, card));
+    favoriteIcon.addEventListener("click", () =>
+      removeFavorite(favorite, card)
+    );
 
     card.appendChild(img);
     card.appendChild(favoriteIcon);
@@ -188,3 +201,11 @@ function closeModalFunc(modal) {
   modal.style.display = "none";
 }
 
+const tagButtons = document.querySelectorAll(".tag-button");
+
+tagButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const tag = button.dataset.tag;
+    callApi(tag, 1);
+  });
+});
