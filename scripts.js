@@ -144,7 +144,47 @@ function displayFavoriteImages() {
     img.alt = "Favorite Image";
     img.id = `fav-img-${index}`;
 
+    const favoriteIcon = document.createElement("div");
+    favoriteIcon.className = "favorite-icon";
+    favoriteIcon.innerHTML = "<i class='fas fa-heart'></i>";
+    favoriteIcon.addEventListener("click", () => removeFavorite(favorite, card));
+
     card.appendChild(img);
+    card.appendChild(favoriteIcon);
     imageGallery.appendChild(card);
   });
 }
+
+function removeFavorite(imageUrl, cardElement) {
+  const favorites = getFavoritesFromLocalStorage();
+  const updatedFavorites = favorites.filter((fav) => fav !== imageUrl);
+  saveFavoritesToLocalStorage(updatedFavorites);
+  cardElement.remove();
+}
+
+function openModal(hit) {
+  const modal = document.getElementById("modal");
+  const modalContent = document.getElementById("modal-item-details");
+  modalContent.innerHTML = `<p>Image Url: ${hit.pageURL}</p>
+                            <p>Image tags: ${hit.tags}</p>
+                            <p>Views: ${hit.views}</p>
+                            <p>Comments: ${hit.comments}</p>
+                            <p>Likes: ${hit.likes}</p>
+                            <p>User: ${hit.user}</p>`;
+
+  modal.style.display = "block";
+
+  window.addEventListener("click", (event) => {
+    if (event.target == modal) {
+      closeModalFunc(modal);
+    }
+  });
+
+  const closeModal = document.getElementById("close-modal");
+  closeModal.addEventListener("click", () => closeModalFunc(modal));
+}
+
+function closeModalFunc(modal) {
+  modal.style.display = "none";
+}
+

@@ -26,6 +26,7 @@ body {
   border-radius: 5px;
   object-fit: cover;
   cursor: pointer;
+  background: url();
 }
 
 .card img:hover {
