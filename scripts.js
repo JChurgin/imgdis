@@ -1,211 +1,67 @@
-const API_KEY = "38037221-2273b01c62481dfc7f61a369c";
-const URL = `https://pixabay.com/api/?key=${API_KEY}&image_type=photo`;
+import { fetchImages } from "./api.js";
+import { loadMoreImages } from "./loadMore.js";
 
-function handleFormSubmit(event) {
-  event.preventDefault();
+let loadedImageCount = 0;
+const imagesPerLoad = 10;
 
-  const searchQuery = document.getElementById("searchInput").value;
+// Load images
 
-  callApi(searchQuery, 1);
-}
+async function loadImages(query) {
+  const imageResults = document.getElementById("imageResults");
 
-function callApi(queryOrTag, page) {
-  const encodedQueryOrTag = encodeURIComponent(queryOrTag);
-
-  let apiUrl;
-
-  if (displayFavorites) {
-    displayFavoriteImages();
-    return;
-  }
-
-  if (queryOrTag) {
-    apiUrl = `${URL}&q=${encodedQueryOrTag}&page=${page}`;
-  } else {
-    apiUrl = `${URL}&page=${page}`;
-  }
-
-  fetch(apiUrl)
-    .then((response) => response.json())
-    .then((data) => displayResults(data, page))
-    .catch((error) => console.error('Error fetching data:', error));
-}
-
-function displayResults(data, page) {
-  if (!displayFavorites) {
-    const imageGallery = document.getElementById("imageGallery");
-
-    if (page === 1) {
-      imageGallery.innerHTML = "";
-    }
-
-    const favorites = getFavoritesFromLocalStorage();
-
-    data.hits.forEach((hit, index) => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const img = document.createElement("img");
-      img.src = hit.webformatURL;
-      img.alt = "Image";
-      img.id = `img-${index}`;
-
-      const favoriteIcon = document.createElement("div");
-      favoriteIcon.className = "favorite-icon";
-      favoriteIcon.innerHTML = "<i class='far fa-heart'></i>";
-
-      card.appendChild(img);
-      card.appendChild(favoriteIcon);
-      imageGallery.appendChild(card);
-
-      const imgElement = document.getElementById(`img-${index}`);
-      const iconElement = favoriteIcon.querySelector("i");
-
-      if (favorites.includes(hit.webformatURL)) {
-        iconElement.classList.remove("far");
-        iconElement.classList.add("fas");
-      }
-
-      favoriteIcon.addEventListener("click", () =>
-        toggleFavorite(hit, iconElement)
-      );
-      imgElement.addEventListener("click", () => openModal(hit));
-    });
-
-    if (data.totalHits > page * 20) {
-      const loadMoreBtn = document.getElementById("loadMoreBtn");
-      loadMoreBtn.hidden = false;
-    } else {
-      const loadMoreBtn = document.getElementById("loadMoreBtn");
-      loadMoreBtn.hidden = true;
-    }
-  }
-}
-
-function toggleFavorite(hit, iconElement) {
-  const favorites = getFavoritesFromLocalStorage();
-  const imageUrl = hit.webformatURL;
-
-  if (favorites.includes(imageUrl)) {
-    const updatedFavorites = favorites.filter((fav) => fav !== imageUrl);
-    iconElement.classList.remove("fas");
-    iconElement.classList.add("far");
-    saveFavoritesToLocalStorage(updatedFavorites);
-  } else {
-    favorites.push(imageUrl);
-    iconElement.classList.remove("far");
-    iconElement.classList.add("fas");
-    saveFavoritesToLocalStorage(favorites);
-  }
-}
-
-function saveFavoritesToLocalStorage(favorites) {
-  localStorage.setItem("favorites", JSON.stringify(favorites));
-}
-
-function getFavoritesFromLocalStorage() {
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  return favorites;
-}
-
-const searchForm = document.getElementById("searchForm");
-searchForm.addEventListener("submit", handleFormSubmit);
-
-let page = 1;
-
-function loadMoreImages() {
-  const searchQuery = document.getElementById("searchInput").value;
-  page++;
-  callApi(searchQuery, page);
-}
-
-let displayFavorites = false;
-
-function toggleView() {
-  displayFavorites = !displayFavorites;
-  const toggleBtn = document.getElementById("toggleViewBtn");
-
-  if (displayFavorites) {
-    toggleBtn.innerText = "View Search Results";
-    displayFavoriteImages();
-  } else {
-    toggleBtn.innerText = "View Favorites";
-    const searchQuery = document.getElementById("searchInput").value;
-    callApi(searchQuery, 1);
-  }
-}
-
-function displayFavoriteImages() {
-  const imageGallery = document.getElementById("imageGallery");
-  imageGallery.innerHTML = "";
-
-  const favorites = getFavoritesFromLocalStorage();
-
-  if (favorites.length === 0) {
-    imageGallery.innerHTML = "<p>No favorites yet.</p>";
-    return;
-  }
-
-  favorites.forEach((favorite, index) => {
+  const images = await fetchImages(query);
+  for (let i = loadedImageCount; i < loadedImageCount + imagesPerLoad; i++) {
+    if (i >= images.length) break;
     const card = document.createElement("div");
-    card.className = "card";
+    card.classList.add("card");
+    card.innerHTML = `<img src="${images[i].webformatURL}" alt="${images[i].tags}" />`;
+    imageResults.appendChild(card);
+  }
+  loadedImageCount += imagesPerLoad;
 
-    const img = document.createElement("img");
-    img.src = favorite;
-    img.alt = "Favorite Image";
-    img.id = `fav-img-${index}`;
-
-    const favoriteIcon = document.createElement("div");
-    favoriteIcon.className = "favorite-icon";
-    favoriteIcon.innerHTML = "<i class='fas fa-heart'></i>";
-    favoriteIcon.addEventListener("click", () =>
-      removeFavorite(favorite, card)
-    );
-
-    card.appendChild(img);
-    card.appendChild(favoriteIcon);
-    imageGallery.appendChild(card);
-  });
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  loadMoreBtn.hidden = loadedImageCount >= images.length;
 }
 
-function removeFavorite(imageUrl, cardElement) {
-  const favorites = getFavoritesFromLocalStorage();
-  const updatedFavorites = favorites.filter((fav) => fav !== imageUrl);
-  saveFavoritesToLocalStorage(updatedFavorites);
-  cardElement.remove();
-}
+document.getElementById("searchForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const searchInput = document.getElementById("searchInput").value;
+  loadImages(searchInput);
+});
 
-function openModal(hit) {
+// Load more images
+
+document.getElementById("loadMoreBtn").addEventListener("click", () => {
+  const searchInput = document.getElementById("searchInput").value;
+  loadMoreImages(searchInput, loadedImageCount);
+});
+
+// Modal
+
+const imageResults = document.getElementById("imageResults");
+
+function openModal() {
   const modal = document.getElementById("modal");
-  const modalContent = document.getElementById("modal-item-details");
-  modalContent.innerHTML = `<p>Image Url: ${hit.pageURL}</p>
-                            <p>Image tags: ${hit.tags}</p>
-                            <p>Views: ${hit.views}</p>
-                            <p>Comments: ${hit.comments}</p>
-                            <p>Likes: ${hit.likes}</p>
-                            <p>User: ${hit.user}</p>`;
-
   modal.style.display = "block";
-
-  window.addEventListener("click", (event) => {
-    if (event.target == modal) {
-      closeModalFunc(modal);
-    }
-  });
-
-  const closeModal = document.getElementById("close-modal");
-  closeModal.addEventListener("click", () => closeModalFunc(modal));
 }
 
-function closeModalFunc(modal) {
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
   modal.style.display = "none";
 }
 
-const tagButtons = document.querySelectorAll(".tag-button");
+window.addEventListener("click", (event) => {
+  const modal = document.getElementById("modal");
+  if (event.target === modal) {
+    closeModal("modal");
+  }
+});
 
-tagButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const tag = button.dataset.tag;
-    callApi(tag, 1);
-  });
+const closeModalBtn = document.getElementById("close-modal");
+closeModalBtn.addEventListener("click", () => {
+  closeModal("modal");
+});
+
+imageResults.addEventListener("click", (event) => {
+  openModal();
 });
